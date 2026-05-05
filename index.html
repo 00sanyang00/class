@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>우리 반</title>
+
+<style>
+body { font-family: sans-serif; margin: 0; text-align: center; }
+
+.page { display: none; padding: 20px; }
+.active { display: block; }
+
+h1 { margin-bottom: 20px; }
+
+/* 시작 화면 */
+.main-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 300px;
+  margin: auto;
+}
+
+button {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid black;
+  background: white;
+  cursor: pointer;
+}
+
+input {
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid black;
+}
+
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 300px;
+  margin: auto;
+}
+
+.error { color: red; }
+
+/* 메인 */
+#list { margin-top: 20px; }
+.item { border-bottom: 1px solid black; padding: 10px; }
+
+.addBtn {
+  position: fixed;
+  right: 20px;
+  bottom: 80px;
+  width: 50px;
+  height: 50px;
+  font-size: 24px;
+}
+
+.tabbar {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  border-top: 1px solid black;
+  background: white;
+}
+
+/* 시간표 */
+table { width: 100%; border-collapse: collapse; }
+td, th { border: 1px solid black; height: 40px; }
+
+.editBtn {
+  position: absolute;
+  right: 20px;
+  top: 20px;
+}
+
+textarea {
+  width: 100%;
+  height: 80px;
+  margin-top: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- 시작 -->
+<div id="startPage" class="page active">
+  <h1>우리 반</h1>
+  <div class="main-btns">
+    <button onclick="goPage('joinPage')">우리 반 들어가기</button>
+    <button onclick="goPage('createPage')">반 만들기</button>
+  </div>
+</div>
+
+<!-- 들어가기 -->
+<div id="joinPage" class="page">
+  <h1>우리 반 들어가기</h1>
+  <div class="box">
+    <input id="joinName" placeholder="반 이름">
+    <input id="joinCode" type="password" placeholder="코드">
+    <button onclick="joinClass()">입장</button>
+    <button onclick="goPage('startPage')">← 돌아가기</button>
+  </div>
+  <p id="joinError" class="error"></p>
+</div>
+
+<!-- 만들기 -->
+<div id="createPage" class="page">
+  <h1>반 만들기</h1>
+  <div class="box">
+    <input id="createName" placeholder="반 이름">
+    <input id="createCode" type="password" placeholder="코드">
+    <button onclick="createClass()">우리 반 완성!</button>
+    <button onclick="goPage('startPage')">← 돌아가기</button>
+  </div>
+  <p id="createError" class="error"></p>
+</div>
+
+<!-- 메인 -->
+<div id="mainPage" class="page">
+  <h1 id="pageTitle">시험</h1>
+  <div id="list"></div>
+  <button class="addBtn" onclick="addItem()">+</button>
+
+  <div class="tabbar">
+    <button onclick="changeTab('time')">시간표</button>
+    <button onclick="changeTab('exam')">시험</button>
+    <button onclick="changeTab('board')">질문</button>
+    <button onclick="changeTab('vote')">투표</button>
+  </div>
+</div>
+
+<!-- 시간표 -->
+<div id="timePage" class="page">
+  <h1>시간표</h1>
+
+  <button class="editBtn" onclick="toggleEdit()">수정</button>
+
+  <table id="timetable">
+    <tr>
+      <th></th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th>
+    </tr>
+  </table>
+
+  <button id="saveBtn" onclick="saveTable()" style="display:none;">저장</button>
+
+  <textarea id="memo" placeholder="메모"></textarea>
+
+  <div class="tabbar">
+    <button onclick="changeTab('time')">시간표</button>
+    <button onclick="changeTab('exam')">시험</button>
+    <button onclick="changeTab('board')">질문</button>
+    <button onclick="changeTab('vote')">투표</button>
+  </div>
+</div>
+
+<script>
+
+/* 페이지 이동 */
+function goPage(page){
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.getElementById(page).classList.add("active");
+}
+
+/* 반 생성 */
+function createClass(){
+  const name = createName.value.trim();
+  const code = createCode.value.trim();
+
+  if(!name || !code){
+    createError.innerText = "모든 값 입력";
+    return;
+  }
+
+  localStorage.setItem("className", name);
+  localStorage.setItem("classCode", code);
+
+  enterApp();
+}
+
+/* 입장 */
+function joinClass(){
+  const name = joinName.value.trim();
+  const code = joinCode.value.trim();
+
+  if(name === localStorage.getItem("className") &&
+     code === localStorage.getItem("classCode")){
+    enterApp();
+  } else {
+    joinError.innerText = "정보 틀림";
+  }
+}
+
+/* 앱 시작 */
+function enterApp(){
+  goPage("timePage");
+}
+
+/* 탭 */
+function changeTab(tab){
+  if(tab === "time"){
+    goPage("timePage");
+  } else {
+    goPage("mainPage");
+  }
+
+  pageTitle.innerText =
+    tab === "exam" ? "시험" :
+    tab === "board" ? "질문 게시판" :
+    tab === "vote" ? "투표" : "시험";
+}
+
+/* 리스트 */
+function addItem(){
+  const text = prompt("내용");
+  if(!text) return;
+
+  const div = document.createElement("div");
+  div.className = "item";
+  div.innerText = text;
+  list.appendChild(div);
+}
+
+/* 시간표 생성 */
+let editing = false;
+
+function createTable(){
+  for(let i=1;i<=7;i++){
+    let row = "<tr><td>"+i+"</td>";
+    for(let j=0;j<5;j++){
+      row += `<td onclick="editCell(this)"></td>`;
+    }
+    row += "</tr>";
+    timetable.innerHTML += row;
+  }
+}
+createTable();
+
+/* 수정 모드 */
+function toggleEdit(){
+  editing = !editing;
+  saveBtn.style.display = editing ? "block" : "none";
+}
+
+/* 셀 수정 */
+function editCell(td){
+  if(!editing) return;
+
+  const text = prompt("과목 입력", td.innerText);
+  if(text !== null){
+    td.innerText = text;
+  }
+}
+
+/* 저장 */
+function saveTable(){
+  const data = [];
+  document.querySelectorAll("#timetable tr").forEach((row,i)=>{
+    if(i===0) return;
+    const rowData = [];
+    row.querySelectorAll("td").forEach((cell,j)=>{
+      if(j===0) return;
+      rowData.push(cell.innerText);
+    });
+    data.push(rowData);
+  });
+
+  localStorage.setItem("timetable", JSON.stringify(data));
+  alert("저장됨");
+  editing = false;
+  saveBtn.style.display = "none";
+}
+
+/* 불러오기 */
+function loadTable(){
+  const data = JSON.parse(localStorage.getItem("timetable"));
+  if(!data) return;
+
+  const rows = document.querySelectorAll("#timetable tr");
+
+  data.forEach((rowData,i)=>{
+    const cells = rows[i+1].querySelectorAll("td");
+    rowData.forEach((val,j)=>{
+      cells[j+1].innerText = val;
+    });
+  });
+}
+loadTable();
+
+</script>
+
+</body>
+</html>
